@@ -1,65 +1,84 @@
-pipeline{
+pipeline {
 
     agent any
-    tools{
+
+    tools {
         maven "maven"
     }
 
-    environment{
-           APP_NAME = "spring-docker-cicd"
-           RELEASE_NO= "1.0.0"
-           DOCKER_USER= "nareshvanka"
-           IMAGE_NAME= "${DOCKER_USER}"+"/"+"${APP_NAME}"
-           IMAGE_TAG= "${RELEASE_NO}-${BUILD_NUMBER}"
+    environment {
+        APP_NAME     = "spring-docker-cicd"
+        RELEASE_NO   = "1.0.0"
+        DOCKER_USER  = "nareshvanka"
     }
 
-    stages{
+    stages {
 
-        stage("SCM checkout"){
-            steps{
-                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/javatechie-devops/jenkins-ci-cd.git']])
+        stage("SCM Checkout") {
+            steps {
+                checkout scmGit(
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/NareshVanka21/jenkins-ci-cd.git']]
+                )
             }
         }
 
-        stage("Build Process"){
-            steps{
-                script{
-                    bat 'mvn clean install'
+        stage("Build Process") {
+            steps {
+                bat "mvn clean install"
+            }
+        }
+
+        stage("Prepare Image Metadata") {
+            steps {
+                script {
+                    env.IMAGE_NAME = "${env.DOCKER_USER}/${env.APP_NAME}"
+                    env.IMAGE_TAG  = "${env.RELEASE_NO}-${env.BUILD_NUMBER}"
                 }
             }
         }
 
-        stage("Build Image"){
-            steps{
-                script{
-                    bat 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
-                }
+        stage("Build Image") {
+            steps {
+                bat "docker build -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
             }
         }
 
-        stage("Deploy Image to Hub"){
-            steps{
-                withCredentials([string(credentialsId: 'dp', variable: 'dp')]) {
-                 bat 'docker login -u nareshvanka -p ${dp}'
-                 bat 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
+        stage("Deploy Image to Hub") {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'db-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    bat """
+                        echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                        docker push ${env.IMAGE_NAME}:${env.IMAGE_TAG}
+                    """
                 }
             }
         }
-
-
     }
 
-    post{
-        always{
-            emailext attachLog: true,
-            body: ''' <html>
-    <body>
-        <p>Build Status: ${BUILD_STATUS}</p>
-        <p>Build Number: ${BUILD_NUMBER}</p>
-        <p>Check the <a href="${BUILD_URL}">console output</a>.</p>
-    </body>
-</html>''', mimeType: 'text/html', replyTo: 'vanka.naresh21@gmail.com', subject: 'Pipeline Status : ${BUILD_NUMBER}', to: 'vanka.nari@gmail.com'
-
+    post {
+        always {
+            emailext(
+                attachLog: true,
+                mimeType: 'text/html',
+                subject: "Pipeline Status : ${env.BUILD_NUMBER}",
+                to: 'vanka.nari@gmail.com',
+                body: """
+                <html>
+                    <body>
+                        <p>Build Status: ${currentBuild.currentResult}</p>
+                        <p>Build Number: ${env.BUILD_NUMBER}</p>
+                        <p>Check the <a href="${env.BUILD_URL}">console output</a>.</p>
+                    </body>
+                </html>
+                """
+            )
         }
     }
 }
