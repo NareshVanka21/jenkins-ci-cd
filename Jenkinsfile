@@ -8,7 +8,7 @@ pipeline{
     environment{
            APP_NAME = "spring-docker-cicd"
            RELEASE_NO= "1.0.0"
-           DOCKER_USER= "javatechie4u"
+           DOCKER_USER= "nareshvanka"
            IMAGE_NAME= "${DOCKER_USER}"+"/"+"${APP_NAME}"
            IMAGE_TAG= "${RELEASE_NO}-${BUILD_NUMBER}"
     }
@@ -24,7 +24,7 @@ pipeline{
         stage("Build Process"){
             steps{
                 script{
-                    sh 'mvn clean install'
+                    bat 'mvn clean install'
                 }
             }
         }
@@ -32,7 +32,7 @@ pipeline{
         stage("Build Image"){
             steps{
                 script{
-                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                    bat 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
                 }
             }
         }
@@ -40,8 +40,8 @@ pipeline{
         stage("Deploy Image to Hub"){
             steps{
                 withCredentials([string(credentialsId: 'dp', variable: 'dp')]) {
-                 sh 'docker login -u javatechie4u -p ${dp}'
-                 sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
+                 bat 'docker login -u nareshvanka -p ${dp}'
+                 bat 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
                 }
             }
         }
@@ -58,7 +58,7 @@ pipeline{
         <p>Build Number: ${BUILD_NUMBER}</p>
         <p>Check the <a href="${BUILD_URL}">console output</a>.</p>
     </body>
-</html>''', mimeType: 'text/html', replyTo: 'javatechie.learning@gmail.com', subject: 'Pipeline Status : ${BUILD_NUMBER}', to: 'javatechie.learning@gmail.com'
+</html>''', mimeType: 'text/html', replyTo: 'vanka.naresh21@gmail.com', subject: 'Pipeline Status : ${BUILD_NUMBER}', to: 'vanka.nari@gmail.com'
 
         }
     }
