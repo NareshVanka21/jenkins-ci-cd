@@ -1,5 +1,6 @@
-FROM openjdk:17
-WORKDIR /appContainer
-COPY ./target/jenkinsCiCd.jar /appContainer
-EXPOSE 8282
-CMD ["java","-jar","jenkinsCiCd.jar"]
+FROM eclipse-temurin:21-jdk-alpine
+workDIR /app
+COPY target/*.jar spring-docker.jar
+expose 8282
+ENTRYPOINT ["java","-jar","spring-docker.jar"]
+CMD ["java","-jar","spring-docker.jar"]
